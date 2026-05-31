@@ -1,0 +1,25 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Local generated data and model artifacts
+data/*
+!data/.gitkeep
+checkpoints/*
+!checkpoints/.gitkeep
+experiments/runs/*
+*.pt
+*.pth
+*.ckpt
+
+# Tooling and test caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
