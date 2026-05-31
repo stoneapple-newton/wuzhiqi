@@ -1,0 +1,3 @@
+[submodule "tempalte/AlphaZero_Gomoku"]
+	path = tempalte/AlphaZero_Gomoku
+	url = https://github.com/junxiaosong/AlphaZero_Gomoku.git

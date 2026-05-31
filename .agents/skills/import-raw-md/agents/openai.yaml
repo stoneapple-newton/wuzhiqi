@@ -1,0 +1,4 @@
+interface:
+  display_name: "Import Raw Markdown"
+  short_description: "Promote raw docs into organized wiki pages"
+  default_prompt: "Use $import-raw-md to promote Markdown from docs/raw into the proper docs/wiki destination."

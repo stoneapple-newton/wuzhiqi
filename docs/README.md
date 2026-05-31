@@ -1,18 +1,10 @@
-# Wuzhiqi AlphaZero Wiki
+# Wuzhiqi AlphaZero Docs
 
-This wiki tracks the design and operating context for the AlphaZero-style Gomoku project.
+This folder separates project context from planning artifacts.
 
-## Core Pages
+## Project Wiki
 
-- [Rules](Rules.md)
-- [State Representation](StateRepresentation.md)
-- [Network Architecture](NetworkArchitecture.md)
-- [Training Hyperparameters](TrainingHyperparameters.md)
-- [Datasets](Datasets.md)
-- [Experiments](Experiments.md)
-- [Evaluation Metrics](EvaluationMetrics.md)
-- [Checkpoints](Checkpoints.md)
-- [Reproducibility](Reproducibility.md)
+- [Wiki index](wiki/README.md)
 
 ## Planning
 
@@ -21,3 +13,7 @@ This wiki tracks the design and operating context for the AlphaZero-style Gomoku
 - [User Stories](SAFe/UserStories.md)
 - [PI Planning](SAFe/PI_Planning.md)
 - [Definition of Done](SAFe/DefinitionOfDone.md)
+
+## Raw Inputs
+
+- [Raw research and planning inputs](raw/)
