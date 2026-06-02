@@ -26,10 +26,14 @@
             "id": "64beae703903b6c3",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "type": "markdown",
+              "state": {
+                "file": "docs/wiki/training-workflow/SingleProcessPipeline.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "SingleProcessPipeline"
             }
           }
         ],
@@ -127,6 +131,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "docs/wiki/training-workflow/SingleProcessPipeline.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -136,7 +141,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks"
+              "title": "Backlinks for SingleProcessPipeline"
             }
           },
           {
@@ -145,11 +150,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "docs/wiki/training-workflow/SingleProcessPipeline.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links"
+              "title": "Outgoing links from SingleProcessPipeline"
             }
           },
           {
@@ -187,12 +193,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "docs/wiki/training-workflow/SingleProcessPipeline.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline"
+              "title": "Outline of SingleProcessPipeline"
             }
           }
         ]
@@ -215,9 +222,15 @@
   },
   "active": "64beae703903b6c3",
   "lastOpenFiles": [
+    "docs/wiki/MCTSDesign.md",
+    "docs/wiki/Datasets.md",
+    "docs/wiki/Checkpoints.md",
+    "data/training-log-report.html",
+    "data/train-15x15-log.log",
+    "docs/wiki/EvaluationMetrics.md",
+    "docs/wiki/SelfPlayTraining.md",
     "docs/wiki/TrainingStatusChecks.md",
     "docs/wiki/StateRepresentation.md",
-    "docs/wiki/SelfPlayTraining.md",
     "docs/wiki/ScalingRoadmap.md",
     "docs/wiki/Rules.md",
     "docs/wiki/ResearchResources.md",
@@ -227,22 +240,18 @@
     "docs/wiki/training-workflow/SingleProcessPipeline.md",
     "docs/SAFe/PI01/US-401-compare-two-agents.md",
     "docs/SAFe/UserStories.md",
-    "docs/wiki/MCTSDesign.md",
     "docs/SAFe/PI01/US-301-run-mcts-for-a-move.md",
     "docs/SAFe/PI01/US-202-detect-wins.md",
     "docs/SAFe/PI01/US-201-reset-game-state.md",
     "docs/SAFe/PI01/InitalSetUp.md",
     "docs/wiki/NetworkArchitecture.md",
     "docs/wiki/Experiments.md",
-    "docs/wiki/EvaluationMetrics.md",
     "checkpoints/best_training_checkpoint.pt",
     "checkpoints/best_policy_15x15.pt",
     "README.md",
     "AGENTS.md",
     "docs/raw/inital_research.md",
     "docs/SAFe/Epics.md",
-    "docs/SAFe/DefinitionOfDone.md",
-    "docs/SAFe/PI_Planning.md",
     "docs/SAFe/PI01",
     "Untitled"
   ]
