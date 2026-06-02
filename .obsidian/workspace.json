@@ -21,8 +21,19 @@
               "icon": "lucide-file",
               "title": "SingleProcessPipeline"
             }
+          },
+          {
+            "id": "64beae703903b6c3",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       },
       {
         "id": "5baa0ca7d0129abf",
@@ -35,12 +46,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/wiki/ParallelTrainingInvestigation.md",
+                "file": "docs/wiki/TrainingStatusChecks.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ParallelTrainingInvestigation"
+              "title": "TrainingStatusChecks"
             }
           }
         ]
@@ -116,7 +127,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "docs/wiki/ParallelTrainingInvestigation.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -126,7 +136,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for ParallelTrainingInvestigation"
+              "title": "Backlinks"
             }
           },
           {
@@ -135,12 +145,11 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "docs/wiki/ParallelTrainingInvestigation.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from ParallelTrainingInvestigation"
+              "title": "Outgoing links"
             }
           },
           {
@@ -178,13 +187,12 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "docs/wiki/ParallelTrainingInvestigation.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of ParallelTrainingInvestigation"
+              "title": "Outline"
             }
           }
         ]
@@ -205,21 +213,25 @@
       "bases:Create new base": false
     }
   },
-  "active": "3fcba2d8ece83183",
+  "active": "64beae703903b6c3",
   "lastOpenFiles": [
+    "docs/wiki/TrainingStatusChecks.md",
+    "docs/wiki/StateRepresentation.md",
+    "docs/wiki/SelfPlayTraining.md",
+    "docs/wiki/ScalingRoadmap.md",
+    "docs/wiki/Rules.md",
+    "docs/wiki/ResearchResources.md",
+    "docs/wiki/Reproducibility.md",
+    "docs/wiki/ProjectRoadmap.md",
+    "docs/wiki/ParallelTrainingInvestigation.md",
     "docs/wiki/training-workflow/SingleProcessPipeline.md",
     "docs/SAFe/PI01/US-401-compare-two-agents.md",
     "docs/SAFe/UserStories.md",
-    "docs/wiki/ResearchResources.md",
-    "docs/wiki/ScalingRoadmap.md",
-    "docs/wiki/SelfPlayTraining.md",
     "docs/wiki/MCTSDesign.md",
-    "docs/wiki/ProjectRoadmap.md",
     "docs/SAFe/PI01/US-301-run-mcts-for-a-move.md",
     "docs/SAFe/PI01/US-202-detect-wins.md",
     "docs/SAFe/PI01/US-201-reset-game-state.md",
     "docs/SAFe/PI01/InitalSetUp.md",
-    "docs/wiki/ParallelTrainingInvestigation.md",
     "docs/wiki/NetworkArchitecture.md",
     "docs/wiki/Experiments.md",
     "docs/wiki/EvaluationMetrics.md",
@@ -232,8 +244,6 @@
     "docs/SAFe/DefinitionOfDone.md",
     "docs/SAFe/PI_Planning.md",
     "docs/SAFe/PI01",
-    "Untitled",
-    "docs/wiki/training-workflow/README.md",
-    "docs/wiki/README.md"
+    "Untitled"
   ]
 }

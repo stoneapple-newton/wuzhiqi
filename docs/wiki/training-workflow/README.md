@@ -5,6 +5,7 @@ This folder tracks how the current single-process training loop works and where 
 ## Pages
 
 - [Single Process Pipeline](SingleProcessPipeline.md)
+- [Training Status Checks](../TrainingStatusChecks.md)
 
 ## Current Command
 

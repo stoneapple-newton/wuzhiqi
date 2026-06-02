@@ -10,6 +10,7 @@ This wiki tracks the design and operating context for the AlphaZero-style Gomoku
 - [Network Architecture](NetworkArchitecture.md)
 - [MCTS Design](MCTSDesign.md)
 - [Self-Play Training](SelfPlayTraining.md)
+- [Training Status Checks](TrainingStatusChecks.md)
 - [Training Hyperparameters](TrainingHyperparameters.md)
 - [Datasets](Datasets.md)
 - [Experiments](Experiments.md)
