@@ -25,6 +25,8 @@ self_play:
   games_per_iteration: 1
   temperature_moves: 12
 evaluation:
+  opponent: heuristic
+  heuristic_search_radius: 2
   games: 2
   seed: 20260531
   pure_mcts_playouts: 200

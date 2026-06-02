@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from wuzhiqi.game import Board, Gomoku
+from wuzhiqi.heuristic import HeuristicPlayer
 from wuzhiqi.human_play import HumanPlayer
 from wuzhiqi.mcts import MCTSPlayer, uniform_policy_value_fn
 from wuzhiqi.network import PolicyValueNet
@@ -156,3 +157,21 @@ def test_human_player_parses_valid_move(monkeypatch) -> None:
     monkeypatch.setattr("builtins.input", lambda _: "2,3")
 
     assert human.get_action(board) == board.location_to_move([2, 3])
+
+
+def test_heuristic_player_takes_immediate_win() -> None:
+    board = Board(width=6, height=6, n_in_row=4)
+    for move in [0, 6, 1, 7, 2, 8]:
+        board.do_move(move)
+    player = HeuristicPlayer()
+
+    assert player.get_action(board) == 3
+
+
+def test_heuristic_player_blocks_immediate_loss() -> None:
+    board = Board(width=6, height=6, n_in_row=4)
+    for move in [6, 0, 7, 1, 12, 2]:
+        board.do_move(move)
+    player = HeuristicPlayer()
+
+    assert player.get_action(board) == 3

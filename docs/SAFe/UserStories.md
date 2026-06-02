@@ -1,49 +1,26 @@
 # User Stories
 
-## US-201: Reset Game State
+User stories are organized by Program Increment. Each story should include scope, acceptance criteria, implementation notes, and test guidance.
 
-- **As a** developer,
-- **I want** a Gomoku environment that resets to an empty board,
-- **So that** tests and self-play can start from a known state.
+## PI01
 
-### Acceptance Criteria
+- [PI01 User Stories](PI01/InitalSetUp.md)
 
-- Reset returns an empty board.
-- Black is the first player.
-- Legal moves include every board intersection.
+## Story Template
 
-## US-202: Detect Wins
+```text
+## US-000: Story Title
 
-- **As an** ML researcher,
-- **I want** terminal wins detected exactly,
-- **So that** self-play rewards are correct.
+- As a <role>,
+- I want <capability>,
+- So that <outcome>.
 
 ### Acceptance Criteria
 
-- Horizontal, vertical, and both diagonal wins are detected.
-- Wins at board edges are detected.
-- Non-winning lines shorter than five are not terminal.
+- Given <context>, when <action>, then <observable result>.
 
-## US-301: Run MCTS for a Move
+### Test Guidance
 
-- **As an** agent developer,
-- **I want** MCTS to return a visit-count policy,
-- **So that** self-play can produce policy targets.
+- Add deterministic tests for behavior that affects rules, state encoding, MCTS math, training samples, or evaluation.
+```
 
-### Acceptance Criteria
-
-- Illegal moves receive zero probability.
-- Visit counts sum to the configured simulation count after search.
-- Terminal states return no expanded children.
-
-## US-401: Compare Two Agents
-
-- **As an** experiment owner,
-- **I want** a repeatable evaluation match runner,
-- **So that** I can detect regressions between checkpoints.
-
-### Acceptance Criteria
-
-- Agents alternate first-player color.
-- Evaluation accepts a random seed.
-- Results include wins, losses, draws, and average game length.
