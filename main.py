@@ -1,5 +1,4 @@
-def main():
-    print("Hello from wuzhiqi!")
+from wuzhiqi.train import main
 
 
 if __name__ == "__main__":

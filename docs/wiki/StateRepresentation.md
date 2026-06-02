@@ -2,13 +2,15 @@
 
 The baseline network input is a board tensor from the current player's perspective.
 
-- **Shape:** `C x 15 x 15`.
+- **Current shape:** `4 x 6 x 6` for the local smoke baseline.
+- **Full target shape:** `4 x 15 x 15`.
 - **Channel 0:** Current player's stones.
 - **Channel 1:** Opponent stones.
-- **Optional channel 2:** Constant plane for side-to-move or move parity if experiments show it helps.
+- **Channel 2:** Last move location.
+- **Channel 3:** Constant plane marking side-to-move/move parity, following the template implementation.
 - **Legal moves:** Computed from empty intersections at runtime.
 - **Action index:** Flatten row-major board coordinates with `action = row * board_size + col`.
-- **Action space size:** `board_size * board_size`, currently `225` for a 15 x 15 board.
+- **Action space size:** `width * height`, currently `36` for the smoke baseline and `225` for a 15 x 15 board.
 
 ## Notes
 

@@ -1,17 +1,31 @@
-board_size: 15
+board_width: 15
+board_height: 15
+n_in_row: 5
+checkpoint_dir: checkpoints
 mcts:
   simulations: 100
-  cpuct: 1.5
-  dirichlet_alpha: 0.03
+  cpuct: 5.0
+  dirichlet_alpha: 0.3
   exploration_fraction: 0.25
 training:
   batch_size: 32
-  learning_rate: 0.001
+  learning_rate: 0.002
   weight_decay: 0.0001
   replay_buffer_size: 10000
+  temperature: 1.0
+  epochs: 5
+  kl_target: 0.02
+  check_freq: 200
+  game_batch_num: 10000
+  resume: false
+  checkpoint_path: checkpoints/training_checkpoint_15x15.pt
+  current_model_path: checkpoints/current_policy_15x15.pt
+  best_model_path: checkpoints/best_policy_15x15.pt
 self_play:
-  games_per_iteration: 8
+  games_per_iteration: 1
   temperature_moves: 12
 evaluation:
-  games: 20
+  games: 2
   seed: 20260531
+  pure_mcts_playouts: 200
+  model_file: checkpoints/current_policy_15x15.pt
