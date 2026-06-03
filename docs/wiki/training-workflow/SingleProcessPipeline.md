@@ -2,6 +2,11 @@
 
 The current training workflow is implemented in `src/wuzhiqi/train.py`.
 
+The default config is currently set for a warm-start smoke reset: it loads
+`checkpoints/current_policy_15x15.pt` as model weights, but does not resume the
+old optimizer, replay buffer, batch counter, random states, or adaptive
+learning-rate multiplier.
+
 ## Startup
 
 1. Load `config/default.yaml`.
@@ -40,8 +45,13 @@ Logged values include:
 
 - `kl`: policy shift between old and new network outputs.
 - `lr_multiplier`: adaptive multiplier for the configured learning rate.
+- `effective_lr`: actual learning rate applied to the optimizer.
 - `loss`: combined value loss and policy loss.
+- `policy_loss`: policy cross-entropy component.
+- `value_loss`: value MSE component.
 - `entropy`: spread of the policy distribution.
+- `replay_buffer`: current augmented replay-buffer size.
+- `target_counts`: sampled value-target balance for `-1`, `0`, and `1`.
 - `explained_var_old` and `explained_var_new`: value-head fit before and after the update.
 
 ## Evaluation

@@ -54,6 +54,9 @@ class TrainPipeline:
         self.checkpoint_path = Path(training_cfg.get("checkpoint_path", self.checkpoint_dir / "training_checkpoint.pt"))
         self.current_model_path = Path(training_cfg.get("current_model_path", self.checkpoint_dir / "current_policy.pt"))
         self.best_model_path = Path(training_cfg.get("best_model_path", self.checkpoint_dir / "best_policy.pt"))
+        self.best_checkpoint_path = Path(
+            training_cfg.get("best_checkpoint_path", self.checkpoint_dir / "best_training_checkpoint.pt")
+        )
         self.resume = bool(training_cfg.get("resume", False))
 
         model_file = init_model or self.config.get("init_model")
@@ -160,9 +163,11 @@ class TrainPipeline:
         old_probs, old_v = self.policy_value_net.policy_value(state_batch)
         kl = 0.0
         loss = 0.0
+        policy_loss = 0.0
+        value_loss = 0.0
         entropy = 0.0
         for _ in range(self.epochs):
-            loss, entropy = self.policy_value_net.train_step(
+            loss, policy_loss, value_loss, entropy = self.policy_value_net.train_step(
                 state_batch,
                 mcts_probs_batch,
                 winner_batch,
@@ -190,10 +195,26 @@ class TrainPipeline:
         target_var = np.var(np.array(winner_batch))
         explained_var_old = 1 - old_var / target_var if target_var > 0 else 0.0
         explained_var_new = 1 - new_var / target_var if target_var > 0 else 0.0
+        target_values, target_counts = np.unique(np.array(winner_batch, dtype=np.float32), return_counts=True)
+        target_count_map = {float(value): int(count) for value, count in zip(target_values, target_counts)}
         print(
-            "kl:{:.5f},lr_multiplier:{:.3f},loss:{},entropy:{},"
+            "kl:{:.5f},lr_multiplier:{:.3f},effective_lr:{:.7f},loss:{},"
+            "policy_loss:{},value_loss:{},entropy:{},replay_buffer:{},"
+            "target_counts:-1={},0={},1={},"
             "explained_var_old:{:.3f},explained_var_new:{:.3f}".format(
-                kl, self.lr_multiplier, loss, entropy, explained_var_old, explained_var_new
+                kl,
+                self.lr_multiplier,
+                self.learn_rate * self.lr_multiplier,
+                loss,
+                policy_loss,
+                value_loss,
+                entropy,
+                len(self.data_buffer),
+                target_count_map.get(-1.0, 0),
+                target_count_map.get(0.0, 0),
+                target_count_map.get(1.0, 0),
+                explained_var_old,
+                explained_var_new,
             )
         )
         return loss, entropy
@@ -247,7 +268,7 @@ class TrainPipeline:
                         print("New best policy")
                         self.best_win_ratio = win_ratio
                         self.policy_value_net.save_model(self.best_model_path)
-                        self.save_checkpoint(self.checkpoint_dir / "best_training_checkpoint.pt")
+                        self.save_checkpoint(self.best_checkpoint_path)
                         if self.best_win_ratio == 1.0 and self.pure_mcts_playout_num < 5000:
                             self.pure_mcts_playout_num += 1000
                             self.best_win_ratio = 0.0

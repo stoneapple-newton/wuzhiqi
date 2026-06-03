@@ -27,13 +27,13 @@ Current `config/default.yaml` uses a small smoke-evaluation setup:
 evaluation:
   opponent: heuristic
   heuristic_search_radius: 2
-  games: 2
+  games: 4
   seed: 20260531
   pure_mcts_playouts: 200
-  model_file: checkpoints/current_policy_15x15.pt
+  model_file: checkpoints/warm_reset_current_policy_15x15.pt
 ```
 
-Two games are useful for checking that evaluation runs, but they are not enough to make reliable strength or checkpoint-promotion decisions.
+Four games are useful for checking that evaluation runs, but they are not enough to make reliable strength or checkpoint-promotion decisions.
 
 ## Metric Groups
 
@@ -147,7 +147,7 @@ standard_error ~= sqrt(score_rate * (1 - score_rate) / games)
 95_percent_interval ~= score_rate +/- 1.96 * standard_error
 ```
 
-This approximation is imperfect when draws are common, but it is useful for intuition. With only `2` games, uncertainty is so large that the result should not be treated as a strength estimate.
+This approximation is imperfect when draws are common, but it is useful for intuition. With only `4` games, uncertainty is so large that the result should not be treated as a strength estimate.
 
 ### Color Balance
 
@@ -225,7 +225,7 @@ Meaning:
 - Lower loss does not guarantee stronger play.
 - Sudden spikes, `nan`, or flat loss across many intervals require investigation.
 
-Current code returns total loss only. For better diagnosis, log `value_loss` and `policy_loss` separately in the future.
+Current code logs total loss, `policy_loss`, and `value_loss` separately.
 
 ### Policy Loss
 
@@ -298,12 +298,12 @@ KL divergence measures how much the policy changed from before to after an updat
 
 The current adaptive learning-rate logic uses `training.kl_target`.
 
-For the current `kl_target: 0.02`:
+For the current warm-reset `kl_target: 0.01`:
 
-- `< 0.01`: conservative update.
-- `0.01-0.04`: near target range.
-- `0.04-0.08`: aggressive update.
-- `> 0.08`: large update; repeated spikes are a concern.
+- `< 0.005`: conservative update.
+- `0.005-0.02`: near target range.
+- `0.02-0.04`: aggressive update.
+- `> 0.04`: large update; repeated spikes are a concern.
 
 KL is a stability metric, not a strength metric.
 
@@ -514,7 +514,6 @@ The current code already reports wins, losses, draws, games, and score rate. The
 
 - Average game length during evaluation.
 - Color-split results.
-- Separate policy loss and value loss.
 - Replay-buffer target distribution.
 - Confidence interval for score rate.
 - Evaluation runtime.

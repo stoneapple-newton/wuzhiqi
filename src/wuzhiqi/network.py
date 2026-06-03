@@ -128,7 +128,12 @@ class PolicyValueNet:
         loss.backward()
         self.optimizer.step()
         entropy = -torch.mean(torch.sum(torch.exp(log_act_probs) * log_act_probs, dim=1))
-        return float(loss.item()), float(entropy.item())
+        return (
+            float(loss.item()),
+            float(policy_loss.item()),
+            float(value_loss.item()),
+            float(entropy.item()),
+        )
 
     def get_policy_param(self):
         return self.policy_value_net.state_dict()

@@ -21,6 +21,21 @@ Initial defaults should favor correctness and quick iteration.
 - **Win length:** `5`
 - **MCTS simulations per move:** start at `50` to `100`, then scale upward.
 
+## Current Warm-Start Smoke Defaults
+
+The default 15x15 configuration is currently set for a short warm-start reset run:
+
+- **Initial model:** `checkpoints/current_policy_15x15.pt`
+- **Resume checkpoint:** disabled; optimizer state, replay buffer, batch counter, and adaptive LR multiplier reset.
+- **Output checkpoints:** `checkpoints/warm_reset_*_15x15.pt`
+- **MCTS simulations per move:** `50`
+- **Batch size:** `128`
+- **Replay buffer size:** `20_000` positions
+- **Learning rate:** `5e-4`
+- **Epochs per update:** `2`
+- **KL target:** `0.01`
+- **Evaluation games:** `4`
+
 ## Scaled Defaults
 
 - **MCTS simulations per move:** `400` to `800`

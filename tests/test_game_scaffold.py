@@ -87,11 +87,13 @@ def test_policy_value_net_forward_and_train_step() -> None:
     mcts_probs = np.ones((1, 36), dtype=np.float32) / 36
 
     action_probs, values = net.policy_value(state_batch)
-    loss, entropy = net.train_step(state_batch, mcts_probs, [0.0], lr=0.001)
+    loss, policy_loss, value_loss, entropy = net.train_step(state_batch, mcts_probs, [0.0], lr=0.001)
 
     assert action_probs.shape == (1, 36)
     assert values.shape == (1, 1)
     assert loss > 0
+    assert policy_loss > 0
+    assert value_loss >= 0
     assert entropy > 0
 
 
@@ -149,6 +151,97 @@ evaluation:
     assert resumed.best_win_ratio == 0.6
     assert resumed.pure_mcts_playout_num == 2000
     assert len(resumed.data_buffer) == 1
+
+
+def test_init_model_without_resume_resets_training_state(tmp_path) -> None:
+    model_path = tmp_path / "policy.pt"
+    checkpoint_path = tmp_path / "training_checkpoint.pt"
+    config_path = tmp_path / "config.yaml"
+    checkpoint_dir = str(tmp_path).replace("\\", "/")
+    checkpoint_file = str(checkpoint_path).replace("\\", "/")
+    model_file = str(model_path).replace("\\", "/")
+
+    seed_config = tmp_path / "seed_config.yaml"
+    seed_config.write_text(
+        f"""
+board_width: 6
+board_height: 6
+n_in_row: 4
+checkpoint_dir: {checkpoint_dir}
+mcts:
+  simulations: 1
+  cpuct: 5.0
+training:
+  batch_size: 2
+  learning_rate: 0.002
+  weight_decay: 0.0001
+  replay_buffer_size: 10
+  temperature: 1.0
+  epochs: 1
+  kl_target: 0.02
+  check_freq: 1
+  game_batch_num: 2
+  resume: false
+  checkpoint_path: {checkpoint_file}
+self_play:
+  games_per_iteration: 1
+evaluation:
+  games: 1
+  seed: 123
+  pure_mcts_playouts: 1
+""",
+        encoding="utf-8",
+    )
+    seeded = TrainPipeline(seed_config)
+    seeded.current_batch = 7
+    seeded.lr_multiplier = 0.5
+    seeded.data_buffer.append((Board().current_state(), np.ones(36, dtype=np.float32) / 36, 1.0))
+    seeded.policy_value_net.save_model(model_path)
+    seeded.save_checkpoint()
+
+    config_path.write_text(
+        f"""
+board_width: 6
+board_height: 6
+n_in_row: 4
+checkpoint_dir: {checkpoint_dir}
+init_model: {model_file}
+mcts:
+  simulations: 1
+  cpuct: 5.0
+training:
+  batch_size: 2
+  learning_rate: 0.002
+  weight_decay: 0.0001
+  replay_buffer_size: 10
+  temperature: 1.0
+  epochs: 1
+  kl_target: 0.02
+  check_freq: 1
+  game_batch_num: 2
+  resume: false
+  checkpoint_path: {checkpoint_file}
+  current_model_path: {model_file}
+  best_model_path: {model_file}
+  best_checkpoint_path: {checkpoint_file}
+self_play:
+  games_per_iteration: 1
+evaluation:
+  games: 1
+  seed: 123
+  pure_mcts_playouts: 1
+""",
+        encoding="utf-8",
+    )
+    reset = TrainPipeline(config_path)
+
+    assert reset.current_batch == 0
+    assert reset.lr_multiplier == 1.0
+    assert len(reset.data_buffer) == 0
+    assert reset.checkpoint_path == checkpoint_path
+    assert reset.current_model_path == model_path
+    assert reset.best_model_path == model_path
+    assert reset.best_checkpoint_path == checkpoint_path
 
 
 def test_human_player_parses_valid_move(monkeypatch) -> None:

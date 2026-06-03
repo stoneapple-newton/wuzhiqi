@@ -10,8 +10,10 @@ For each recent log window, record:
 - **Episode length range and average:** from `episode_len`.
 - **KL range:** from `kl`.
 - **Learning-rate multiplier:** from `lr_multiplier`.
-- **Loss range:** from `loss`.
+- **Effective learning rate:** from `effective_lr`.
+- **Loss ranges:** from `loss`, `policy_loss`, and `value_loss`.
 - **Entropy range:** from `entropy`.
+- **Replay target balance:** from `target_counts`.
 - **Explained variance:** from `explained_var_old` and `explained_var_new`.
 - **Evaluation result:** most recent `opponent`, wins, losses, ties, and promoted checkpoint status.
 
@@ -37,8 +39,13 @@ The current implementation logs these fields from `TrainPipeline.policy_update()
 - `episode_len`: number of moves in the most recent self-play game before augmentation.
 - `kl`: average KL divergence between the policy distribution before and after the update.
 - `lr_multiplier`: adaptive multiplier applied to `training.learning_rate`.
+- `effective_lr`: actual learning rate applied after the adaptive multiplier.
 - `loss`: combined policy-value network loss returned by `PolicyValueNet.train_step()`.
+- `policy_loss`: policy cross-entropy against MCTS visit targets.
+- `value_loss`: value MSE against final outcome targets.
 - `entropy`: policy entropy returned by `PolicyValueNet.train_step()`.
+- `replay_buffer`: number of augmented samples currently available.
+- `target_counts`: sampled value target counts for losses, draws, and wins.
 - `explained_var_old`: value-head explained variance before the update.
 - `explained_var_new`: value-head explained variance after the update.
 
@@ -49,14 +56,14 @@ board_width: 15
 board_height: 15
 n_in_row: 5
 mcts:
-  simulations: 100
+  simulations: 50
 training:
-  batch_size: 32
-  kl_target: 0.02
-  check_freq: 200
+  batch_size: 128
+  kl_target: 0.01
+  check_freq: 20
 evaluation:
   opponent: heuristic
-  games: 2
+  games: 4
 ```
 
 ## How To Interpret Logs
@@ -67,11 +74,12 @@ Use `batch i` to measure run progress, not playing strength. With `self_play.gam
 
 Current checkpoints are configured as:
 
-- `checkpoints/training_checkpoint_15x15.pt`
-- `checkpoints/current_policy_15x15.pt`
-- `checkpoints/best_policy_15x15.pt`
+- `checkpoints/warm_reset_training_checkpoint_15x15.pt`
+- `checkpoints/warm_reset_current_policy_15x15.pt`
+- `checkpoints/warm_reset_best_policy_15x15.pt`
+- `checkpoints/warm_reset_best_training_checkpoint_15x15.pt`
 
-With `check_freq: 200`, expect evaluation and checkpointing at batches `200`, `400`, `600`, `800`, and so on.
+With `check_freq: 20`, expect evaluation and checkpointing at batches `20`, `40`, `60`, `80`, and so on during the smoke reset.
 
 ### Episode Length
 
@@ -93,7 +101,7 @@ Likely causes include win-detection bugs, illegal move handling, temperature set
 
 ### KL
 
-`kl` measures how much the network policy changed during the update. The configured target is `training.kl_target: 0.02`.
+`kl` measures how much the network policy changed during the update. The configured warm-reset target is `training.kl_target: 0.01`.
 
 Current adaptive rule:
 
@@ -101,12 +109,12 @@ Current adaptive rule:
 - If `kl > kl_target * 2` and `lr_multiplier > 0.1`, the multiplier is divided by `1.5`.
 - If `kl < kl_target / 2` and `lr_multiplier < 10`, the multiplier is multiplied by `1.5`.
 
-Interpretation for `kl_target: 0.02`:
+Interpretation for `kl_target: 0.01`:
 
-- `< 0.01`: updates may be too small; LR multiplier may rise.
-- `0.01-0.04`: generally controlled.
-- `0.04-0.08`: aggressive; watch for repeated spikes.
-- `> 0.08`: large policy movement; repeated values usually mean training instability.
+- `< 0.005`: updates may be too small; LR multiplier may rise.
+- `0.005-0.02`: generally controlled.
+- `0.02-0.04`: aggressive; watch for repeated spikes.
+- `> 0.04`: large policy movement; repeated values usually mean training instability.
 
 If `lr_multiplier` is below `0.1`, the current code will not reduce it further because of the `> 0.1` guard. A run sitting near `0.088` is already heavily throttled.
 
@@ -161,20 +169,20 @@ If `explained_var_old` and `explained_var_new` stay at `0.000`, check:
 - Value loss contributes gradients.
 - Replay buffer is not dominated by identical or near-identical outcomes.
 
-Do not rely on explained variance alone for very small batches. The current 15x15 config uses `batch_size: 32`, so it can be noisy.
+Do not rely on explained variance alone for small batches. The current warm-reset 15x15 config uses `batch_size: 128`, which is still diagnostic rather than definitive.
 
 ## Evaluation Checklist
 
 Check training status at each checkpoint interval:
 
-1. Confirm the run reached an evaluation batch such as `600` or `800`.
+1. Confirm the run reached an evaluation batch such as `20` or `40`.
 2. Record the opponent label, win count, loss count, tie count, and win ratio.
-3. Confirm `current_policy_15x15.pt` was saved.
-4. Confirm `training_checkpoint_15x15.pt` was saved.
-5. If the run prints `New best policy`, confirm `best_policy_15x15.pt` and `best_training_checkpoint.pt` were saved.
+3. Confirm `warm_reset_current_policy_15x15.pt` was saved.
+4. Confirm `warm_reset_training_checkpoint_15x15.pt` was saved.
+5. If the run prints `New best policy`, confirm `warm_reset_best_policy_15x15.pt` and `warm_reset_best_training_checkpoint_15x15.pt` were saved.
 6. Compare results against the previous checkpoint, not just against the raw loss.
 
-Use evaluation games that are separate from self-play. Alternate starting player, keep seeds reproducible for regression checks, and increase `evaluation.games` when a promotion decision matters. Two games is enough for a smoke check, but not enough for a reliable strength estimate.
+Use evaluation games that are separate from self-play. Alternate starting player, keep seeds reproducible for regression checks, and increase `evaluation.games` when a promotion decision matters. Four games is enough for a smoke check, but not enough for a reliable strength estimate.
 
 ## Current 15x15 Triage Rules
 
@@ -182,9 +190,9 @@ Use these rules for the current config:
 
 - **Continue watching:** episode lengths vary, loss is finite, entropy is nonzero, and KL spikes are isolated.
 - **Inspect value pipeline:** explained variance remains `0.000` for several evaluation intervals.
-- **Inspect LR/KL behavior:** `kl` repeatedly exceeds `0.08`, especially if `lr_multiplier` is already below `0.1`.
+- **Inspect LR/KL behavior:** `kl` repeatedly exceeds `0.04`, especially if `lr_multiplier` is already below `0.1`.
 - **Inspect MCTS/search quality:** evaluation does not improve after several checkpoint intervals despite stable training loss.
-- **Increase evaluation games:** any checkpoint promotion is based on only `2` games.
+- **Increase evaluation games:** any checkpoint promotion based on `4` games is still only a smoke signal.
 - **Scale cautiously:** before increasing network or MCTS size, verify value targets, legal moves, winner perspective, checkpoint resume, and deterministic evaluation.
 
 ## Useful Commands

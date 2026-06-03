@@ -2,32 +2,34 @@ board_width: 15
 board_height: 15
 n_in_row: 5
 checkpoint_dir: checkpoints
+init_model: checkpoints/current_policy_15x15.pt
 mcts:
-  simulations: 100
+  simulations: 50
   cpuct: 5.0
   dirichlet_alpha: 0.3
   exploration_fraction: 0.25
 training:
-  batch_size: 32
-  learning_rate: 0.002
+  batch_size: 128
+  learning_rate: 0.0005
   weight_decay: 0.0001
-  replay_buffer_size: 10000
+  replay_buffer_size: 20000
   temperature: 1.0
-  epochs: 5
-  kl_target: 0.02
-  check_freq: 200
-  game_batch_num: 10000
+  epochs: 2
+  kl_target: 0.01
+  check_freq: 20
+  game_batch_num: 100
   resume: false
-  checkpoint_path: checkpoints/training_checkpoint_15x15.pt
-  current_model_path: checkpoints/current_policy_15x15.pt
-  best_model_path: checkpoints/best_policy_15x15.pt
+  checkpoint_path: checkpoints/warm_reset_training_checkpoint_15x15.pt
+  current_model_path: checkpoints/warm_reset_current_policy_15x15.pt
+  best_model_path: checkpoints/warm_reset_best_policy_15x15.pt
+  best_checkpoint_path: checkpoints/warm_reset_best_training_checkpoint_15x15.pt
 self_play:
   games_per_iteration: 1
   temperature_moves: 12
 evaluation:
   opponent: heuristic
   heuristic_search_radius: 2
-  games: 2
+  games: 4
   seed: 20260531
   pure_mcts_playouts: 200
-  model_file: checkpoints/current_policy_15x15.pt
+  model_file: checkpoints/warm_reset_current_policy_15x15.pt
