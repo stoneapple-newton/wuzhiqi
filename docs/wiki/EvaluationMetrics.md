@@ -27,13 +27,13 @@ Current `config/default.yaml` uses a small smoke-evaluation setup:
 evaluation:
   opponent: heuristic
   heuristic_search_radius: 2
-  games: 4
+  games: 10
   seed: 20260531
   pure_mcts_playouts: 200
-  model_file: checkpoints/warm_reset_current_policy_15x15.pt
+  model_file: checkpoints/mixed_start_current_policy_15x15.pt
 ```
 
-Four games are useful for checking that evaluation runs, but they are not enough to make reliable strength or checkpoint-promotion decisions.
+Ten games are useful for checking that evaluation runs, but they are not enough to make reliable strength or checkpoint-promotion decisions.
 
 ## Metric Groups
 
@@ -147,7 +147,7 @@ standard_error ~= sqrt(score_rate * (1 - score_rate) / games)
 95_percent_interval ~= score_rate +/- 1.96 * standard_error
 ```
 
-This approximation is imperfect when draws are common, but it is useful for intuition. With only `4` games, uncertainty is so large that the result should not be treated as a strength estimate.
+This approximation is imperfect when draws are common, but it is useful for intuition. With only `10` games, uncertainty is still large enough that the result should not be treated as a final strength estimate.
 
 ### Color Balance
 
@@ -261,6 +261,7 @@ High or stagnant value loss can mean:
 - Winner labels are wrong.
 - Perspective encoding is wrong.
 - Replay buffer has low outcome diversity.
+- Value targets are leaking through a non-tactical feature such as fixed-start turn parity.
 - The value head is undertrained relative to the policy head.
 
 ### Explained Variance

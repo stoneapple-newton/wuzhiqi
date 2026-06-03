@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wuzhiqi Training Dashboard</title>
+  <style>
+    :root {
+      --bg: #f5f7f8;
+      --panel: #ffffff;
+      --ink: #1f2328;
+      --muted: #64707d;
+      --line: #d8dee4;
+      --blue: #2563eb;
+      --teal: #0f766e;
+      --amber: #b45309;
+      --red: #b91c1c;
+      --green: #15803d;
+      --violet: #7c3aed;
+      --shadow: 0 1px 2px rgba(31, 35, 40, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; }
+    header { background: #fff; border-bottom: 1px solid var(--line); }
+    .wrap { width: min(1280px, calc(100vw - 32px)); margin: 0 auto; }
+    .top { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: end; padding: 22px 0 16px; }
+    h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: 0; }
+    h2 { margin: 0 0 10px; font-size: 17px; letter-spacing: 0; }
+    h3 { margin: 0 0 8px; font-size: 14px; letter-spacing: 0; }
+    p { margin: 0 0 10px; }
+    main { padding: 18px 0 32px; }
+    select, input, button { font: inherit; }
+    select, input { border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); padding: 8px; min-width: 150px; }
+    button { border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--ink); padding: 8px 10px; cursor: pointer; }
+    button.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .muted { color: var(--muted); }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .card, .chart-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 14px; }
+    section { margin-bottom: 14px; }
+    .metric-label { color: var(--muted); font-size: 12px; text-transform: uppercase; }
+    .metric-value { display: block; margin-top: 4px; font-size: 23px; font-weight: 700; }
+    .metric-note { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+    canvas { display: block; width: 100%; height: 220px; }
+    .legend { display: flex; gap: 12px; color: var(--muted); font-size: 12px; flex-wrap: wrap; }
+    .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; background: currentColor; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 7px 6px; text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    pre { white-space: pre-wrap; max-height: 320px; overflow: auto; background: #f0f3f6; border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+    .alerts { border-left: 4px solid var(--amber); padding-left: 12px; }
+    .board { display: grid; gap: 2px; width: min(100%, 540px); aspect-ratio: 1; }
+    .cell { display: grid; place-items: center; border: 1px solid #b8c0c8; background: #f9fafb; min-width: 0; min-height: 0; padding: 0; }
+    .stone { width: 68%; aspect-ratio: 1; border-radius: 50%; }
+    .p1 { background: #111827; }
+    .p2 { background: #e5e7eb; border: 1px solid #6b7280; }
+    @media (max-width: 920px) { .top, .two { grid-template-columns: 1fr; } .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 560px) { .wrap { width: min(100vw - 20px, 1280px); } .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap top">
+      <div>
+        <h1>Wuzhiqi Training Dashboard</h1>
+        <p class="muted">Local dashboard for logs, Codex analysis, checkpoint evaluation, and play.</p>
+      </div>
+      <div class="controls">
+        <select id="logSelect"></select>
+        <button id="reload" class="primary">Reload</button>
+      </div>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="grid" id="summary"></section>
+    <section class="two">
+      <div class="card">
+        <h2>Current Read</h2>
+        <p id="currentRead" class="muted">Loading...</p>
+        <div id="alerts" class="alerts"></div>
+      </div>
+      <div class="card">
+        <h2>Agentic Analysis</h2>
+        <div class="controls">
+          <select id="promptSelect"></select>
+          <button id="runAnalysis">Run Codex</button>
+        </div>
+        <p id="codexHealth" class="muted"></p>
+        <pre id="analysisOutput">No analysis run yet.</pre>
+      </div>
+    </section>
+    <section class="two">
+      <div class="chart-card">
+        <h2>Episode Length</h2>
+        <canvas id="episodeChart"></canvas>
+        <div class="legend"><span style="color: var(--teal)">episode length</span></div>
+      </div>
+      <div class="chart-card">
+        <h2>Loss Components</h2>
+        <canvas id="lossChart"></canvas>
+        <div class="legend"><span style="color: var(--blue)">loss</span><span style="color: var(--amber)">policy</span><span style="color: var(--violet)">value</span></div>
+      </div>
+      <div class="chart-card">
+        <h2>KL And LR Multiplier</h2>
+        <canvas id="klChart"></canvas>
+        <div class="legend"><span style="color: var(--red)">KL</span><span style="color: var(--green)">LR</span></div>
+      </div>
+      <div class="chart-card">
+        <h2>Explained Variance</h2>
+        <canvas id="evChart"></canvas>
+        <div class="legend"><span style="color: var(--violet)">new</span><span style="color: var(--muted)">old</span></div>
+      </div>
+    </section>
+    <section class="two">
+      <div class="card">
+        <h2>Evaluation Lab</h2>
+        <div class="controls">
+          <select id="modelSelect"></select>
+          <select id="opponentSelect">
+            <option value="heuristic">Heuristic</option>
+            <option value="pure_mcts">Pure MCTS</option>
+            <option value="model">Model</option>
+          </select>
+          <select id="opponentModelSelect"></select>
+          <input id="gamesInput" type="number" min="1" max="400" value="2">
+          <input id="playoutsInput" type="number" min="1" max="2000" value="50">
+          <button id="runEval" class="primary">Run</button>
+        </div>
+        <pre id="evalOutput">No evaluation run yet.</pre>
+      </div>
+      <div class="card">
+        <h2>Human Vs Model</h2>
+        <div class="controls">
+          <button id="newGame">New Game</button>
+          <label class="muted"><input id="humanFirst" type="checkbox" checked> human first</label>
+        </div>
+        <p id="gameStatus" class="muted">Start a game.</p>
+        <div id="board" class="board"></div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Window Summary</h2>
+      <div id="windowTable"></div>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

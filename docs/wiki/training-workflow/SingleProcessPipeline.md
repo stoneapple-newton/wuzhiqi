@@ -2,10 +2,10 @@
 
 The current training workflow is implemented in `src/wuzhiqi/train.py`.
 
-The default config is currently set for a warm-start smoke reset: it loads
-`checkpoints/current_policy_15x15.pt` as model weights, but does not resume the
-old optimizer, replay buffer, batch counter, random states, or adaptive
-learning-rate multiplier.
+The default config is currently set for a mixed-start follow-up run: it loads
+`checkpoints/warm_reset_current_policy_15x15.pt` as model weights, but does not
+resume the old optimizer, replay buffer, batch counter, random states, or
+adaptive learning-rate multiplier.
 
 ## Startup
 
@@ -37,6 +37,10 @@ For each move:
 3. Sample a move with Dirichlet exploration noise.
 4. Store the current state, move probabilities, and later the game outcome target.
 
+The configured `self_play.start_player_mode: alternate` alternates the starting
+player by batch. This avoids the previous fixed-start mistake where value
+targets became perfectly correlated with the state turn/parity plane.
+
 ## Training Update
 
 `policy_update()` samples from the replay buffer and trains for up to `training.epochs` epochs.
@@ -52,7 +56,18 @@ Logged values include:
 - `entropy`: spread of the policy distribution.
 - `replay_buffer`: current augmented replay-buffer size.
 - `target_counts`: sampled value-target balance for `-1`, `0`, and `1`.
+- `turn_target_counts`: sampled value-target balance split by the fourth state plane.
 - `explained_var_old` and `explained_var_new`: value-head fit before and after the update.
+
+## Previous Mistake And Solution
+
+The warm-reset smoke run used fixed-start self-play and produced a replay buffer
+where the fourth state plane perfectly predicted the value target. The value
+head learned that shortcut, giving near-zero value loss and `1.000` explained
+variance while evaluation still failed.
+
+The solution is to discard that replay buffer, warm-start from model weights
+only, alternate self-play start players, and monitor `turn_target_counts`.
 
 ## Evaluation
 

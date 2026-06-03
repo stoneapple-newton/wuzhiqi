@@ -28,12 +28,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "docs/wiki/training-workflow/SingleProcessPipeline.md",
+                "file": "docs/wiki/MCTSDesign.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "SingleProcessPipeline"
+              "title": "MCTSDesign"
             }
           }
         ],
@@ -131,7 +131,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "docs/wiki/training-workflow/SingleProcessPipeline.md",
+                "file": "docs/wiki/MCTSDesign.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -141,7 +141,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for SingleProcessPipeline"
+              "title": "Backlinks for MCTSDesign"
             }
           },
           {
@@ -150,12 +150,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "docs/wiki/training-workflow/SingleProcessPipeline.md",
+                "file": "docs/wiki/MCTSDesign.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from SingleProcessPipeline"
+              "title": "Outgoing links from MCTSDesign"
             }
           },
           {
@@ -193,13 +193,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "docs/wiki/training-workflow/SingleProcessPipeline.md",
+                "file": "docs/wiki/MCTSDesign.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of SingleProcessPipeline"
+              "title": "Outline of MCTSDesign"
             }
           }
         ]
@@ -222,11 +222,21 @@
   },
   "active": "64beae703903b6c3",
   "lastOpenFiles": [
+    "experiments/evaluations/1780496599_heuristic.json",
+    "experiments/evaluations/1780496576_heuristic.json",
+    "experiments/evaluations/1780496410_heuristic.json",
+    "experiments/evaluations",
+    "src/wuzhiqi/dashboard/__pycache__/jobs.cpython-313.pyc",
+    "src/wuzhiqi/dashboard/__pycache__/server.cpython-313.pyc",
+    "src/wuzhiqi/dashboard/__pycache__/__main__.cpython-313.pyc",
+    "docs/wiki/training-workflow/SingleProcessPipeline.md",
+    "src/wuzhiqi/__pycache__/evaluate.cpython-313.pyc",
+    "src/wuzhiqi/dashboard/__pycache__/logs.cpython-313.pyc",
+    "src/wuzhiqi/dashboard/__pycache__/__init__.cpython-313.pyc",
+    "src/wuzhiqi/dashboard/__pycache__/games.cpython-313.pyc",
     "docs/wiki/MCTSDesign.md",
     "docs/wiki/Datasets.md",
     "docs/wiki/Checkpoints.md",
-    "data/training-log-report.html",
-    "data/train-15x15-log.log",
     "docs/wiki/EvaluationMetrics.md",
     "docs/wiki/SelfPlayTraining.md",
     "docs/wiki/TrainingStatusChecks.md",
@@ -237,7 +247,6 @@
     "docs/wiki/Reproducibility.md",
     "docs/wiki/ProjectRoadmap.md",
     "docs/wiki/ParallelTrainingInvestigation.md",
-    "docs/wiki/training-workflow/SingleProcessPipeline.md",
     "docs/SAFe/PI01/US-401-compare-two-agents.md",
     "docs/SAFe/UserStories.md",
     "docs/SAFe/PI01/US-301-run-mcts-for-a-move.md",
@@ -246,13 +255,8 @@
     "docs/SAFe/PI01/InitalSetUp.md",
     "docs/wiki/NetworkArchitecture.md",
     "docs/wiki/Experiments.md",
-    "checkpoints/best_training_checkpoint.pt",
-    "checkpoints/best_policy_15x15.pt",
     "README.md",
     "AGENTS.md",
-    "docs/raw/inital_research.md",
-    "docs/SAFe/Epics.md",
-    "docs/SAFe/PI01",
-    "Untitled"
+    "docs/raw/inital_research.md"
   ]
 }

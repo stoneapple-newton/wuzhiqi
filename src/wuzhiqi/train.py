@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+import json
 from collections import defaultdict, deque
 from pathlib import Path
 
@@ -39,7 +40,9 @@ class TrainPipeline:
         self.buffer_size = int(training_cfg.get("replay_buffer_size", 10000))
         self.batch_size = int(training_cfg.get("batch_size", 512))
         self.data_buffer = deque(maxlen=self.buffer_size)
-        self.play_batch_size = int(self.config.get("self_play", {}).get("games_per_iteration", 1))
+        self_play_cfg = self.config.get("self_play", {})
+        self.play_batch_size = int(self_play_cfg.get("games_per_iteration", 1))
+        self.start_player_mode = str(self_play_cfg.get("start_player_mode", "fixed"))
         self.epochs = int(training_cfg.get("epochs", 5))
         self.kl_targ = float(training_cfg.get("kl_target", 0.02))
         self.check_freq = int(training_cfg.get("check_freq", 50))
@@ -56,6 +59,9 @@ class TrainPipeline:
         self.best_model_path = Path(training_cfg.get("best_model_path", self.checkpoint_dir / "best_policy.pt"))
         self.best_checkpoint_path = Path(
             training_cfg.get("best_checkpoint_path", self.checkpoint_dir / "best_training_checkpoint.pt")
+        )
+        self.experiment_log_path = Path(
+            training_cfg.get("experiment_log_path", self.checkpoint_dir / "training.jsonl")
         )
         self.resume = bool(training_cfg.get("resume", False))
 
@@ -75,8 +81,42 @@ class TrainPipeline:
             exploration_fraction=float(mcts_cfg.get("exploration_fraction", 0.25)),
         )
         self.episode_len = 0
+        self.last_start_player = 0
+        self.last_winner = -1
+        self.last_self_play_metadata: dict[str, object] = {}
+        self.first_second_winner_counts = {
+            "first_mover_wins": 0,
+            "second_mover_wins": 0,
+            "ties": 0,
+        }
+        self.initial_empty_board_value = self.empty_board_value()
+        print(f"initial_empty_board_value:{self.initial_empty_board_value:.6f}")
+        self.write_jsonl_log(
+            {
+                "event": "init",
+                "batch": self.current_batch,
+                "empty_board_value": self.initial_empty_board_value,
+                "resume": self.resume,
+                "init_model": str(model_file) if model_file else None,
+                "replay_buffer": len(self.data_buffer),
+                "checkpoint_path": str(self.checkpoint_path),
+                "current_model_path": str(self.current_model_path),
+                "best_model_path": str(self.best_model_path),
+                "best_checkpoint_path": str(self.best_checkpoint_path),
+            }
+        )
         if self.resume:
             self.load_checkpoint(self.checkpoint_path)
+
+    def empty_board_value(self) -> float:
+        empty_board = Board(width=self.board_width, height=self.board_height, n_in_row=self.n_in_row)
+        _, values = self.policy_value_net.policy_value([empty_board.current_state()])
+        return float(values.flatten()[0])
+
+    def write_jsonl_log(self, record: dict[str, object]) -> None:
+        self.experiment_log_path.parent.mkdir(parents=True, exist_ok=True)
+        with self.experiment_log_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, sort_keys=True) + "\n")
 
     def get_equi_data(self, play_data):
         return augment_play_data(play_data, self.board_width, self.board_height)
@@ -148,12 +188,42 @@ class TrainPipeline:
             )
         )
 
+    def selfplay_start_player(self, game_index: int = 0) -> int:
+        if self.start_player_mode == "alternate":
+            return (self.current_batch + game_index) % 2
+        if self.start_player_mode == "random":
+            return random.randint(0, 1)
+        if self.start_player_mode == "fixed":
+            return 0
+        raise ValueError(f"unknown self_play.start_player_mode: {self.start_player_mode}")
+
     def collect_selfplay_data(self, n_games: int = 1) -> None:
-        for _ in range(n_games):
-            _, play_data = self.game.start_self_play(self.mcts_player, temp=self.temp)
+        for game_index in range(n_games):
+            start_player = self.selfplay_start_player(game_index)
+            winner, play_data = self.game.start_self_play(self.mcts_player, temp=self.temp, start_player=start_player)
             play_data = list(play_data)
             self.episode_len = len(play_data)
+            self.last_start_player = start_player
+            self.last_winner = winner
+            self.last_self_play_metadata = dict(self.game.last_self_play_metadata)
+            if winner == -1:
+                self.first_second_winner_counts["ties"] += 1
+            elif self.last_self_play_metadata.get("first_mover_won"):
+                self.first_second_winner_counts["first_mover_wins"] += 1
+            elif self.last_self_play_metadata.get("second_mover_won"):
+                self.first_second_winner_counts["second_mover_wins"] += 1
             self.data_buffer.extend(self.get_equi_data(play_data))
+
+    def target_counts_by_reserved_plane(self, winner_batch, state_batch) -> dict[tuple[int, float], int]:
+        counts: dict[tuple[int, float], int] = {}
+        for state, winner in zip(state_batch, winner_batch):
+            reserved_plane = int(float(np.mean(state[3])) > 0.5)
+            key = (reserved_plane, float(winner))
+            counts[key] = counts.get(key, 0) + 1
+        return counts
+
+    def target_counts_by_turn_plane(self, winner_batch, state_batch) -> dict[tuple[int, float], int]:
+        return self.target_counts_by_reserved_plane(winner_batch, state_batch)
 
     def policy_update(self):
         mini_batch = random.sample(self.data_buffer, self.batch_size)
@@ -197,10 +267,13 @@ class TrainPipeline:
         explained_var_new = 1 - new_var / target_var if target_var > 0 else 0.0
         target_values, target_counts = np.unique(np.array(winner_batch, dtype=np.float32), return_counts=True)
         target_count_map = {float(value): int(count) for value, count in zip(target_values, target_counts)}
+        reserved_plane_target_counts = self.target_counts_by_reserved_plane(winner_batch, state_batch)
         print(
             "kl:{:.5f},lr_multiplier:{:.3f},effective_lr:{:.7f},loss:{},"
             "policy_loss:{},value_loss:{},entropy:{},replay_buffer:{},"
             "target_counts:-1={},0={},1={},"
+            "reserved_plane_target_counts:p0[-1={},0={},1={}],p1[-1={},0={},1={}],"
+            "first_second_winner_counts:first={},second={},ties={},"
             "explained_var_old:{:.3f},explained_var_new:{:.3f}".format(
                 kl,
                 self.lr_multiplier,
@@ -213,11 +286,66 @@ class TrainPipeline:
                 target_count_map.get(-1.0, 0),
                 target_count_map.get(0.0, 0),
                 target_count_map.get(1.0, 0),
+                reserved_plane_target_counts.get((0, -1.0), 0),
+                reserved_plane_target_counts.get((0, 0.0), 0),
+                reserved_plane_target_counts.get((0, 1.0), 0),
+                reserved_plane_target_counts.get((1, -1.0), 0),
+                reserved_plane_target_counts.get((1, 0.0), 0),
+                reserved_plane_target_counts.get((1, 1.0), 0),
+                self.first_second_winner_counts["first_mover_wins"],
+                self.first_second_winner_counts["second_mover_wins"],
+                self.first_second_winner_counts["ties"],
                 explained_var_old,
                 explained_var_new,
             )
         )
-        return loss, entropy
+        return {
+            "kl": kl,
+            "lr_multiplier": self.lr_multiplier,
+            "effective_lr": self.learn_rate * self.lr_multiplier,
+            "loss": loss,
+            "policy_loss": policy_loss,
+            "value_loss": value_loss,
+            "entropy": entropy,
+            "replay_buffer": len(self.data_buffer),
+            "target_counts": {
+                "-1": target_count_map.get(-1.0, 0),
+                "0": target_count_map.get(0.0, 0),
+                "1": target_count_map.get(1.0, 0),
+            },
+            "reserved_plane_target_counts": {
+                "p0": {
+                    "-1": reserved_plane_target_counts.get((0, -1.0), 0),
+                    "0": reserved_plane_target_counts.get((0, 0.0), 0),
+                    "1": reserved_plane_target_counts.get((0, 1.0), 0),
+                },
+                "p1": {
+                    "-1": reserved_plane_target_counts.get((1, -1.0), 0),
+                    "0": reserved_plane_target_counts.get((1, 0.0), 0),
+                    "1": reserved_plane_target_counts.get((1, 1.0), 0),
+                },
+            },
+            "explained_var_old": float(explained_var_old),
+            "explained_var_new": float(explained_var_new),
+        }
+
+    def training_log_record(self, update_metrics: dict[str, object] | None = None) -> dict[str, object]:
+        record = {
+            "event": "batch",
+            "batch": self.current_batch,
+            "episode_len": self.episode_len,
+            "start_player": self.last_start_player,
+            "winner": self.last_winner,
+            "self_play_metadata": self.last_self_play_metadata,
+            "first_second_winner_counts": self.first_second_winner_counts,
+            "checkpoint_path": str(self.checkpoint_path),
+            "current_model_path": str(self.current_model_path),
+            "best_model_path": str(self.best_model_path),
+            "best_checkpoint_path": str(self.best_checkpoint_path),
+        }
+        if update_metrics:
+            record.update(update_metrics)
+        return record
 
     def policy_evaluate(self, n_games: int | None = None) -> float:
         n_games = n_games or int(self.config.get("evaluation", {}).get("games", 10))
@@ -256,9 +384,26 @@ class TrainPipeline:
             for i in range(self.current_batch, self.game_batch_num):
                 self.collect_selfplay_data(self.play_batch_size)
                 self.current_batch = i + 1
-                print(f"batch i:{self.current_batch}, episode_len:{self.episode_len}")
+                print(
+                    f"batch i:{self.current_batch}, episode_len:{self.episode_len},"
+                    f"start_player:{self.last_start_player},winner:{self.last_winner}"
+                )
                 if len(self.data_buffer) > self.batch_size:
-                    self.policy_update()
+                    update_metrics = self.policy_update()
+                else:
+                    update_metrics = {
+                        "kl": None,
+                        "loss": None,
+                        "policy_loss": None,
+                        "value_loss": None,
+                        "entropy": None,
+                        "target_counts": {"-1": 0, "0": 0, "1": 0},
+                        "reserved_plane_target_counts": {
+                            "p0": {"-1": 0, "0": 0, "1": 0},
+                            "p1": {"-1": 0, "0": 0, "1": 0},
+                        },
+                    }
+                self.write_jsonl_log(self.training_log_record(update_metrics))
                 if self.current_batch % self.check_freq == 0:
                     print(f"current self-play batch: {self.current_batch}")
                     win_ratio = self.policy_evaluate()

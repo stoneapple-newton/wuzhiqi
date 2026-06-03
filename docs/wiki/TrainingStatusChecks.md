@@ -14,6 +14,8 @@ For each recent log window, record:
 - **Loss ranges:** from `loss`, `policy_loss`, and `value_loss`.
 - **Entropy range:** from `entropy`.
 - **Replay target balance:** from `target_counts`.
+- **Reserved-plane target balance:** from `reserved_plane_target_counts`.
+- **First/second mover outcomes:** from `first_second_winner_counts`.
 - **Explained variance:** from `explained_var_old` and `explained_var_new`.
 - **Evaluation result:** most recent `opponent`, wins, losses, ties, and promoted checkpoint status.
 
@@ -46,6 +48,8 @@ The current implementation logs these fields from `TrainPipeline.policy_update()
 - `entropy`: policy entropy returned by `PolicyValueNet.train_step()`.
 - `replay_buffer`: number of augmented samples currently available.
 - `target_counts`: sampled value target counts for losses, draws, and wins.
+- `reserved_plane_target_counts`: sampled value target counts split by the reserved fourth state plane. For Gomoku v1, all counts should remain under `p0` because the plane is disabled.
+- `first_second_winner_counts`: cumulative counts of self-play wins by first mover, wins by second mover, and ties.
 - `explained_var_old`: value-head explained variance before the update.
 - `explained_var_new`: value-head explained variance after the update.
 
@@ -56,14 +60,16 @@ board_width: 15
 board_height: 15
 n_in_row: 5
 mcts:
-  simulations: 50
+  simulations: 400
 training:
   batch_size: 128
   kl_target: 0.01
   check_freq: 20
+self_play:
+  start_player_mode: alternate
 evaluation:
   opponent: heuristic
-  games: 4
+  games: 10
 ```
 
 ## How To Interpret Logs
@@ -72,14 +78,14 @@ evaluation:
 
 Use `batch i` to measure run progress, not playing strength. With `self_play.games_per_iteration: 1`, one batch means one newly generated self-play game plus one network update once the replay buffer is large enough.
 
-Current checkpoints are configured as:
+Current clean-start checkpoints are configured as:
 
-- `checkpoints/warm_reset_training_checkpoint_15x15.pt`
-- `checkpoints/warm_reset_current_policy_15x15.pt`
-- `checkpoints/warm_reset_best_policy_15x15.pt`
-- `checkpoints/warm_reset_best_training_checkpoint_15x15.pt`
+- `checkpoints/clean_start_training_checkpoint_15x15.pt`
+- `checkpoints/clean_start_current_policy_15x15.pt`
+- `checkpoints/clean_start_best_policy_15x15.pt`
+- `checkpoints/clean_start_best_training_checkpoint_15x15.pt`
 
-With `check_freq: 20`, expect evaluation and checkpointing at batches `20`, `40`, `60`, `80`, and so on during the smoke reset.
+With `check_freq: 20`, expect evaluation and checkpointing at batches `20`, `40`, `60`, `80`, and so on during the clean-start run.
 
 ### Episode Length
 
@@ -171,15 +177,21 @@ If `explained_var_old` and `explained_var_new` stay at `0.000`, check:
 
 Do not rely on explained variance alone for small batches. The current warm-reset 15x15 config uses `batch_size: 128`, which is still diagnostic rather than definitive.
 
+### Reserved-Plane Leakage
+
+The previous smoke run produced replay data where every sample with the fourth state plane enabled had target `-1`, and every sample with that plane disabled had target `+1`. That made `value_loss` and explained variance look excellent, but it was a shortcut rather than useful board evaluation.
+
+The fourth state plane is now disabled and should be all zeros. Investigate immediately if `reserved_plane_target_counts` shows any `p1` samples or if `value_loss` is near zero with `explained_var:1.000` from the first update.
+
 ## Evaluation Checklist
 
 Check training status at each checkpoint interval:
 
 1. Confirm the run reached an evaluation batch such as `20` or `40`.
 2. Record the opponent label, win count, loss count, tie count, and win ratio.
-3. Confirm `warm_reset_current_policy_15x15.pt` was saved.
-4. Confirm `warm_reset_training_checkpoint_15x15.pt` was saved.
-5. If the run prints `New best policy`, confirm `warm_reset_best_policy_15x15.pt` and `warm_reset_best_training_checkpoint_15x15.pt` were saved.
+3. Confirm `clean_start_current_policy_15x15.pt` was saved.
+4. Confirm `clean_start_training_checkpoint_15x15.pt` was saved.
+5. If the run prints `New best policy`, confirm `clean_start_best_policy_15x15.pt` and `clean_start_best_training_checkpoint_15x15.pt` were saved.
 6. Compare results against the previous checkpoint, not just against the raw loss.
 
 Use evaluation games that are separate from self-play. Alternate starting player, keep seeds reproducible for regression checks, and increase `evaluation.games` when a promotion decision matters. Four games is enough for a smoke check, but not enough for a reliable strength estimate.
@@ -192,7 +204,8 @@ Use these rules for the current config:
 - **Inspect value pipeline:** explained variance remains `0.000` for several evaluation intervals.
 - **Inspect LR/KL behavior:** `kl` repeatedly exceeds `0.04`, especially if `lr_multiplier` is already below `0.1`.
 - **Inspect MCTS/search quality:** evaluation does not improve after several checkpoint intervals despite stable training loss.
-- **Increase evaluation games:** any checkpoint promotion based on `4` games is still only a smoke signal.
+- **Inspect reserved-plane leakage:** `reserved_plane_target_counts` should keep all samples in `p0`; any `p1` count means the disabled plane has been reactivated or corrupted.
+- **Increase evaluation games:** any checkpoint promotion based on `10` games is still only a light signal.
 - **Scale cautiously:** before increasing network or MCTS size, verify value targets, legal moves, winner perspective, checkpoint resume, and deterministic evaluation.
 
 ## Useful Commands

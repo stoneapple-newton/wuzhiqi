@@ -15,6 +15,10 @@ data/*
 checkpoints/*
 !checkpoints/.gitkeep
 experiments/runs/*
+experiments/dashboard_analyses/*
+experiments/evaluations/*
+experiments/*.log
+experiments/*.jsonl
 *.pt
 *.pth
 *.ckpt

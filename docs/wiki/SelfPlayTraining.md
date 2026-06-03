@@ -38,6 +38,7 @@ The value target is usually `-1`, `0`, or `1`. The policy target is the normaliz
 - Keep recent positions in a bounded ring buffer.
 - Sample uniformly for the initial implementation.
 - Prefer storing metadata with each generated game: board size, win length, config hash, model checkpoint, and random seed.
+- Current self-play metadata records `start_player`, first mover, second mover, winner, first/second mover win flags, and episode length.
 - Do not commit generated self-play data.
 
 ## Data Augmentation
@@ -57,6 +58,11 @@ Evaluation should be deterministic and repeatable before it controls checkpoint 
 - Elo estimate from a checkpoint ladder.
 - Fixed tactical test positions.
 
+## Diagnostics
+
+- Log the empty-board value before training starts; a clean random model should be near neutral rather than saturated near `-1` or `+1`.
+- Write structured JSONL logs under `experiments/` with batch number, episode length, start player, winner, losses, KL, value target counts, reserved-plane target counts, checkpoint paths, and first/second mover metadata.
+
 ## Related
 
 - [Current Training Workflow](training-workflow/README.md)
@@ -64,4 +70,3 @@ Evaluation should be deterministic and repeatable before it controls checkpoint 
 - [Training Hyperparameters](TrainingHyperparameters.md)
 - [Evaluation Metrics](EvaluationMetrics.md)
 - [Checkpoints](Checkpoints.md)
-

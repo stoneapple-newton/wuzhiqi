@@ -81,8 +81,6 @@ class Board:
             square_state[1][opponent_moves // self.width, opponent_moves % self.height] = 1.0
             if self.last_move >= 0:
                 square_state[2][self.last_move // self.width, self.last_move % self.height] = 1.0
-        if len(self.states) % 2 == 0:
-            square_state[3][:, :] = 1.0
         return square_state[:, ::-1, :]
 
     def do_move(self, move: Move) -> None:
@@ -144,6 +142,7 @@ class Game:
 
     def __init__(self, board: Board) -> None:
         self.board = board
+        self.last_self_play_metadata: dict[str, object] = {}
 
     def graphic(self, board: Board, player1: PlayerId, player2: PlayerId) -> None:
         print("Player", player1, "with X".rjust(3))
@@ -192,9 +191,11 @@ class Game:
                     print(f"Game end. Winner is {players[winner]}" if winner != -1 else "Game end. Tie")
                 return winner
 
-    def start_self_play(self, player: object, is_shown: int = 0, temp: float = 1e-3):
-        self.board.init_board()
+    def start_self_play(self, player: object, is_shown: int = 0, temp: float = 1e-3, start_player: int = 0):
+        self.board.init_board(start_player)
         p1, p2 = self.board.players
+        first_mover = self.board.players[start_player]
+        second_mover = self.board.players[1 - start_player]
         states: list[np.ndarray] = []
         mcts_probs: list[np.ndarray] = []
         current_players: list[PlayerId] = []
@@ -214,6 +215,15 @@ class Game:
                     winners_z[players_arr == winner] = 1.0
                     winners_z[players_arr != winner] = -1.0
                 player.reset_player()
+                self.last_self_play_metadata = {
+                    "start_player": start_player,
+                    "first_mover": first_mover,
+                    "second_mover": second_mover,
+                    "winner": winner,
+                    "first_mover_won": winner == first_mover if winner != -1 else None,
+                    "second_mover_won": winner == second_mover if winner != -1 else None,
+                    "episode_len": len(current_players),
+                }
                 if is_shown:
                     print(f"Game end. Winner is player: {winner}" if winner != -1 else "Game end. Tie")
                 return winner, zip(states, mcts_probs, winners_z)
